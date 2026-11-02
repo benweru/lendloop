@@ -85,11 +85,49 @@ See `.env.example`. Rules:
 
 ## Architecture
 
+### System overview
+
+```mermaid
+flowchart LR
+  U[Browser<br/>Next.js App Router] -- Clerk session --> C[Clerk]
+  U -- "queries / mutations<br/>(Clerk JWT)" --> X[(Convex<br/>RBAC in functions)]
+  C -. JWT issuer .-> X
+  X -- "signed POST<br/>request events" --> N1[n8n<br/>Request notification]
+  N2[n8n<br/>Overdue reminders<br/>daily schedule] -- "signed GET<br/>/api/overdue, /api/borrower-contact" --> X
+  N2 -- "signed POST<br/>/api/reminder-ack (idempotent)" --> X
+  N1 --> M[SMTP or mock log]
+  N2 --> M
+  N1 -. on failure .-> E[n8n<br/>Error workflow]
+  N2 -. on failure .-> E
 ```
-Browser (Next.js) --Clerk JWT--> Convex (queries/mutations, RBAC enforced)
-Convex --signed webhook--> n8n (notify)          [workflow 1: request notification]
-n8n --signed HTTPS--> Convex HTTP endpoints      [workflow 2: daily overdue reminders]
-n8n --signed ack--> Convex (/api/reminder-ack, idempotent write-back)
+
+### Request lifecycle
+
+```mermaid
+sequenceDiagram
+  actor B as Borrower
+  actor O as Owner
+  participant CX as Convex
+  participant N as n8n
+  B->>CX: requestToBorrow (Clerk JWT)
+  CX->>CX: requireCaller, validate, insert (pending)
+  CX-->>B: requestId (mutation done)
+  CX->>N: scheduled action: POST request event<br/>x-lendloop-signature + timestamp (retry 3x, backoff)
+  N->>N: verify HMAC + freshness, minimize, notify owner
+  O->>CX: approveRequest
+  CX->>CX: owner check, status pending→approved
+  CX->>N: signed request event (approved)
+  Note over N,CX: Daily, after the end date
+  N->>CX: signed GET /api/overdue
+  CX-->>N: IDs and dates only (no emails)
+  N->>CX: signed GET /api/borrower-contact
+  CX-->>N: one email
+  N->>N: send reminder (SMTP or mock)
+  N->>CX: signed POST /api/reminder-ack {requestId, reminderDate}
+  CX->>CX: dedupe on requestId:reminderDate
+  CX-->>N: {ok, deduped}
+  B->>CX: markReturned
+  CX->>N: signed request event (returned)
 ```
 
 - **Data model:** `users` (clerkId, role, trustedLender), `tools`
