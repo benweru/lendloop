@@ -111,6 +111,9 @@ n8n --signed ack--> Convex (/api/reminder-ack, idempotent write-back)
 
 ## Security and data-minimization decisions
 
+Full threat model, data-flow table and residual risks: [SECURITY.md](SECURITY.md).
+
+
 - **HMAC-SHA256 both directions** (`convex/webhooks.ts`, mirrored in n8n Code
   nodes): `sha256` signature header + unix-timestamp header over
   `${timestamp}.${rawBody}`; constant-time compare; ±5 min freshness window.
@@ -139,4 +142,5 @@ npm run build    # production build + typecheck
 ## Docs
 
 - `PRODUCTION.md` — what changes for production.
+- `SECURITY.md` — threat model, mitigations and residual risks.
 - `LendLoop_build_brief.md` — the original build brief.
