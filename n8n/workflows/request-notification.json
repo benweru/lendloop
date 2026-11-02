@@ -1,5 +1,5 @@
 {
-  "name": "LendLoop — Request notification",
+  "name": "LendLoop - Request notification",
   "nodes": [
     {
       "parameters": {
@@ -82,7 +82,7 @@
         "toEmail": "=lendloop-notify@example.com",
         "subject": "=LendLoop: request {{ $json.requestId }} is {{ $json.status }}",
         "emailType": "text",
-        "message": "=Tool '{{ $json.toolName }}' ({{ $json.startDate }} \u00e2\u2020\u2019 {{ $json.endDate }}) changed status to {{ $json.status }}.",
+        "message": "=Tool '{{ $json.toolName }}' ({{ $json.startDate }} to {{ $json.endDate }}) changed status to {{ $json.status }}.",
         "options": {},
         "transport": "smtp",
         "smtp": {

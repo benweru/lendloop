@@ -32,10 +32,10 @@ with file references. Residual risks are listed honestly at the end.
 
 | Flow | Fields | Not sent |
 | --- | --- | --- |
-| Convex → n8n request event | `requestId`, `toolName`, `status`, `startDate`, `endDate`, `borrowerId` | emails, names, tool description/condition, owner details |
+| Convex to n8n request event | `requestId`, `toolName`, `status`, `startDate`, `endDate`, `borrowerId` | emails, names, tool description/condition, owner details |
 | n8n ← Convex `/api/overdue` | `requestId`, `toolId`, `borrowerId`, `endDate`, `reminderDate`, `idempotencyKey` | emails |
 | n8n ← Convex `/api/borrower-contact` | `email` for one borrower ID | anything else about the user |
-| n8n → Convex `/api/reminder-ack` | `requestId`, `reminderDate`, `channel` | n/a |
+| n8n to Convex `/api/reminder-ack` | `requestId`, `reminderDate`, `channel` | n/a |
 
 ## Residual risks
 

@@ -744,7 +744,7 @@ export default function HomeClient() {
               Borrow what you need. Lend what you don&apos;t.
             </h2>
             <p className="mt-1 max-w-lg text-sm text-emerald-100">
-              Your neighborhood tool library — drills, ladders, camping gear
+              Your neighborhood tool library: drills, ladders, camping gear
               and more, shared by people nearby.
             </p>
             <div className="mt-4">
@@ -776,7 +776,7 @@ export default function HomeClient() {
         )}
       </main>
       <footer className="border-t border-stone-200/70 py-4 text-center text-xs text-stone-400">
-        LendLoop — share more, buy less.
+        LendLoop: share more, buy less.
       </footer>
     </div>
   );

@@ -18,7 +18,7 @@ async function checkGet(req: Request): Promise<boolean> {
 }
 
 /**
- * GET /api/overdue — polled daily by the n8n overdue-reminder workflow.
+ * GET /api/overdue: polled daily by the n8n overdue-reminder workflow.
  * Returns minimal fields only (IDs, dates, status); n8n resolves the
  * borrower contact server-side via /api/borrower-contact when sending.
  */
@@ -34,7 +34,7 @@ http.route({
 });
 
 /**
- * GET /api/borrower-contact?borrowerId=… — lets n8n resolve the email for a
+ * GET /api/borrower-contact?borrowerId=…: lets n8n resolve the email for a
  * borrower ID at send time, so the overdue list itself carries no PII.
  */
 http.route({
@@ -52,7 +52,7 @@ http.route({
 });
 
 /**
- * POST /api/reminder-ack — idempotent write-back from n8n after sending a
+ * POST /api/reminder-ack: idempotent write-back from n8n after sending a
  * reminder. Retries reuse the same idempotency key and never duplicate rows.
  */
 http.route({

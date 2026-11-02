@@ -3,7 +3,7 @@ import { QueryCtx, MutationCtx } from "./_generated/server";
 /**
  * Resolve the caller's Convex user from their Clerk identity.
  * The role is stored server-side (Convex users table, seeded from Clerk
- * publicMetadata) — a client-sent role is never trusted.
+ * publicMetadata); a client-sent role is never trusted.
  */
 export async function getCaller(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();

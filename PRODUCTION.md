@@ -1,4 +1,4 @@
-# PRODUCTION.md — running LendLoop in production
+# Running LendLoop in production
 
 Short note on what changes beyond this take-home setup.
 
@@ -21,7 +21,7 @@ Short note on what changes beyond this take-home setup.
 - Store `WEBHOOK_HMAC_SECRET` in a secret manager (not `.env` files); rotate
   with a dual-secret grace window (accept N and N−1 during rotation).
 - Pin the timestamp tolerance deliberately (currently ±5 min) and alert on
-  repeated 401s — they indicate misconfiguration or probing.
+  repeated 401s; they indicate misconfiguration or probing.
 - Give n8n and the app distinct secrets per direction if threat modeling
   warrants it, so compromise of one leg doesn't forge the other.
 
@@ -31,7 +31,7 @@ Short note on what changes beyond this take-home setup.
   versioned workflow exports in git (already in `n8n/workflows/`).
 - Replace the mock-log fallback with a real provider (e.g. Resend/Postmark)
   with bounce handling; keep the mock only for non-prod environments.
-- Monitor workflow executions (error workflow → alerting channel, e.g. Slack
+- Monitor workflow executions (error workflow to alerting channel, e.g. Slack
   or PagerDuty) and set execution retention/pruning.
 
 ## App hosting

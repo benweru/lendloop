@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "LendLoop — Borrow what you need. Lend what you don't.",
+  title: "LendLoop: Borrow what you need. Lend what you don't.",
   description: "A neighborhood tool-lending board.",
 };
 
