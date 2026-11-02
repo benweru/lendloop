@@ -25,6 +25,18 @@ npm run dev            # http://localhost:3000
 > `convex/_generated/` is checked in as a placeholder so the repo typechecks
 > standalone. Running `npx convex dev` replaces it with the real codegen.
 
+Clerk ↔ Convex trust (required, otherwise sign-in hangs at "Setting up your
+account"):
+
+1. Clerk dashboard → **Configure → JWT templates** → **New template** →
+   **Convex**. Keep the name `convex`.
+2. Clerk dashboard → **Configure → API keys** → copy the **Frontend API URL**
+   (e.g. `https://xxx.clerk.accounts.dev`).
+3. Convex dashboard → your project → **Settings → Environment Variables** →
+   add `CLERK_JWT_ISSUER_DOMAIN` with that URL. Also add `WEBHOOK_HMAC_SECRET`
+   (same value as the app's `.env`).
+4. Restart `npx convex dev` so it picks up `convex/auth.config.ts`.
+
 ### 3. n8n (self-hosted)
 
 ```bash
@@ -40,9 +52,16 @@ docker compose up -d   # n8n at http://localhost:5678
 ```
 
 Then in the n8n UI: import `n8n/workflows/request-notification.json`,
-`n8n/workflows/overdue-reminders.json`, and `n8n/workflows/error-workflow.json`;
-create the **LendLoop SMTP** credential (only if sending real email); activate
-the workflows. Set each workflow's **Error Workflow** to `LendLoop — Error workflow`.
+`n8n/workflows/overdue-reminders.json`, and `n8n/workflows/error-workflow.json`
+**exactly once each** (re-importing creates duplicates that fight over the same
+webhook path); create the **LendLoop SMTP** credential (only if sending real
+email); activate the workflows. Set each workflow's **Settings → Error
+Workflow** to `LendLoop — Error workflow` (the JSON stores a placeholder —
+error routing needs the live workflow ID, so this is a UI step).
+
+> `docker-compose.yml` already sets `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` and
+> `NODE_FUNCTION_ALLOW_BUILTIN=crypto` — both are required for the HMAC Code
+> nodes. Without SMTP env vars the workflows mock-log instead of emailing.
 
 ### 4. First admin
 

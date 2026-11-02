@@ -21,6 +21,10 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-LendLoop <noreply@example.com>}
+      # Code nodes need $env access for secrets (HMAC secret, SMTP host).
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      # Allow the crypto builtin in Code nodes (needed for HMAC-SHA256).
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
     volumes:
       - n8n_data:/home/node/.n8n
 

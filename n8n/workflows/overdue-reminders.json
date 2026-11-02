@@ -2,12 +2,24 @@
   "name": "LendLoop — Overdue reminders (daily)",
   "nodes": [
     {
-      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 24 }] } },
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
       "id": "schedule",
       "name": "Daily schedule",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -17,7 +29,10 @@
       "name": "Sign request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -25,27 +40,44 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-lendloop-signature", "value": "={{ $json.signature }}" },
-            { "name": "x-lendloop-timestamp", "value": "={{ $json.timestamp }}" }
+            {
+              "name": "x-lendloop-signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "x-lendloop-timestamp",
+              "value": "={{ $json.timestamp }}"
+            }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "fetch-overdue",
       "name": "Fetch overdue loans",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "retryOnFail": true,
       "maxTries": 3
     },
     {
-      "parameters": { "fieldToSplitOut": "overdue", "options": {} },
+      "parameters": {
+        "fieldToSplitOut": "overdue",
+        "options": {}
+      },
       "id": "split",
       "name": "Split overdue items",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -63,13 +95,18 @@
             }
           ]
         },
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "fetch-contact",
       "name": "Resolve borrower contact",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300],
+      "position": [
+        1120,
+        300
+      ],
       "retryOnFail": true,
       "maxTries": 3
     },
@@ -81,7 +118,10 @@
       "name": "Send reminder + sign ack",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
@@ -90,36 +130,114 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-lendloop-signature", "value": "={{ $json.signature }}" },
-            { "name": "x-lendloop-timestamp", "value": "={{ $json.timestamp }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "x-lendloop-signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "x-lendloop-timestamp",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json.rawBody }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "ack",
       "name": "Write back reminder ack",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 300],
+      "position": [
+        1560,
+        300
+      ],
       "retryOnFail": true,
       "maxTries": 5
     }
   ],
   "connections": {
-    "Daily schedule": { "main": [[{ "node": "Sign request", "type": "main", "index": 0 }]] },
-    "Sign request": { "main": [[{ "node": "Fetch overdue loans", "type": "main", "index": 0 }]] },
-    "Fetch overdue loans": { "main": [[{ "node": "Split overdue items", "type": "main", "index": 0 }]] },
-    "Split overdue items": { "main": [[{ "node": "Resolve borrower contact", "type": "main", "index": 0 }]] },
-    "Resolve borrower contact": { "main": [[{ "node": "Send reminder + sign ack", "type": "main", "index": 0 }]] },
-    "Send reminder + sign ack": { "main": [[{ "node": "Write back reminder ack", "type": "main", "index": 0 }]] }
+    "Daily schedule": {
+      "main": [
+        [
+          {
+            "node": "Sign request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign request": {
+      "main": [
+        [
+          {
+            "node": "Fetch overdue loans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch overdue loans": {
+      "main": [
+        [
+          {
+            "node": "Split overdue items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split overdue items": {
+      "main": [
+        [
+          {
+            "node": "Resolve borrower contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve borrower contact": {
+      "main": [
+        [
+          {
+            "node": "Send reminder + sign ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send reminder + sign ack": {
+      "main": [
+        [
+          {
+            "node": "Write back reminder ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "errorWorkflow": "lendloop-error-workflow", "timezone": "UTC" },
+  "settings": {
+    "errorWorkflow": "lendloop-error-workflow",
+    "timezone": "UTC"
+  },
   "staticData": null,
   "pinData": {},
   "versionId": "1",
-  "triggerCount": 0
+  "triggerCount": 0,
+  "active": true
 }

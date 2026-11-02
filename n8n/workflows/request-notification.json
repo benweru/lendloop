@@ -12,18 +12,24 @@
       "name": "Request event webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "lendloop-request-event"
     },
     {
       "parameters": {
-        "jsCode": "// Verify HMAC-SHA256 signature (mirrors convex/webhooks.ts).\n// Headers: x-lendloop-signature = 'sha256=<hex>', x-lendloop-timestamp = unix seconds.\n// Signed payload: `${timestamp}.${rawBody}`.\nconst crypto = require('crypto');\nconst secret = $env.WEBHOOK_HMAC_SECRET;\nconst headers = $('Request event webhook').first().json.headers ?? {};\nconst signature = headers['x-lendloop-signature'] ?? '';\nconst timestamp = headers['x-lendloop-timestamp'] ?? '';\nconst rawBody = JSON.stringify($json.body ?? $json);\nconst now = Math.floor(Date.now() / 1000);\nif (!secret) throw new Error('WEBHOOK_HMAC_SECRET is not set');\nif (Math.abs(now - Number(timestamp)) > 300) throw new Error('Stale timestamp');\nconst expected = 'sha256=' + crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');\nconst a = Buffer.from(expected);\nconst b = Buffer.from(signature);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('Invalid signature');\nreturn [{ json: $json.body ?? $json }];"
+        "jsCode": "// Verify HMAC-SHA256 signature (mirrors convex/webhooks.ts).\n// Headers: x-lendloop-signature = sha256=<hex>, x-lendloop-timestamp = unix seconds.\n// Signed payload: `${timestamp}.${rawBody}`.\nconst crypto = require('crypto');\nconst secret = $env.WEBHOOK_HMAC_SECRET;\nconst headers = $('Request event webhook').first().json.headers ?? {};\nconst signature = headers['x-lendloop-signature'] ?? '';\nconst timestamp = String(headers['x-lendloop-timestamp'] ?? '');\nconst rawBody = JSON.stringify($json.body ?? $json);\nconst now = Math.floor(Date.now() / 1000);\nif (!secret) throw new Error('WEBHOOK_HMAC_SECRET is not set');\nif (Math.abs(now - Number(timestamp)) > 300) throw new Error('Stale timestamp');\nconst expected = 'sha256=' + crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');\nconst a = Buffer.from(expected);\nconst b = Buffer.from(signature);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('Invalid signature');\nreturn [{ json: $json.body ?? $json }];"
       },
       "id": "verify-hmac",
       "name": "Verify HMAC",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -33,18 +39,28 @@
       "name": "Minimize payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
           "conditions": [
             {
+              "operator": {
+                "operation": "larger",
+                "type": "number"
+              },
+              "rightValue": 0,
               "id": "has-smtp",
-              "leftValue": "={{ $env.SMTP_HOST }}",
-              "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "leftValue": "={{ ( $env.SMTP_HOST || '' ).length }}"
             }
           ],
           "combinator": "and"
@@ -55,7 +71,10 @@
       "name": "SMTP configured?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -63,7 +82,7 @@
         "toEmail": "=lendloop-notify@example.com",
         "subject": "=LendLoop: request {{ $json.requestId }} is {{ $json.status }}",
         "emailType": "text",
-        "message": "=Tool '{{ $json.toolName }}' ({{ $json.startDate }} → {{ $json.endDate }}) changed status to {{ $json.status }}.",
+        "message": "=Tool '{{ $json.toolName }}' ({{ $json.startDate }} \u00e2\u2020\u2019 {{ $json.endDate }}) changed status to {{ $json.status }}.",
         "options": {},
         "transport": "smtp",
         "smtp": {
@@ -76,10 +95,12 @@
       "name": "Send email (SMTP)",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [1120, 220],
+      "position": [
+        1120,
+        220
+      ],
       "retryOnFail": true,
-      "maxTries": 3,
-      "credentials": { "smtp": { "id": null, "name": "LendLoop SMTP (configure in n8n credentials)" } }
+      "maxTries": 3
     },
     {
       "parameters": {
@@ -89,33 +110,109 @@
       "name": "Mock log notify",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 400]
+      "position": [
+        1120,
+        400
+      ]
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true }) }}", "options": {} },
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}",
+        "options": {}
+      },
       "id": "respond",
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1340, 300]
+      "position": [
+        1340,
+        300
+      ]
     }
   ],
   "connections": {
-    "Request event webhook": { "main": [[{ "node": "Verify HMAC", "type": "main", "index": 0 }]] },
-    "Verify HMAC": { "main": [[{ "node": "Minimize payload", "type": "main", "index": 0 }]] },
-    "Minimize payload": { "main": [[{ "node": "SMTP configured?", "type": "main", "index": 0 }]] },
-    "SMTP configured?": {
+    "Request event webhook": {
       "main": [
-        [{ "node": "Send email (SMTP)", "type": "main", "index": 0 }],
-        [{ "node": "Mock log notify", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Verify HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Send email (SMTP)": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] },
-    "Mock log notify": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+    "Verify HMAC": {
+      "main": [
+        [
+          {
+            "node": "Minimize payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Minimize payload": {
+      "main": [
+        [
+          {
+            "node": "SMTP configured?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SMTP configured?": {
+      "main": [
+        [
+          {
+            "node": "Send email (SMTP)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mock log notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email (SMTP)": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock log notify": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "errorWorkflow": "lendloop-error-workflow", "timezone": "UTC" },
+  "settings": {
+    "errorWorkflow": "lendloop-error-workflow",
+    "timezone": "UTC"
+  },
   "staticData": null,
   "pinData": {},
   "versionId": "1",
-  "triggerCount": 0
+  "triggerCount": 0,
+  "active": true
 }
