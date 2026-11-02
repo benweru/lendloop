@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getCaller, requireAdmin } from "./helpers";
+import { audit } from "./limits";
 
 /**
  * Ensure the signed-in Clerk user has a Convex users row.
@@ -45,7 +46,24 @@ export const allUsers = query({
 export const setTrustedLender = mutation({
   args: { userId: v.id("users"), trusted: v.boolean() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const admin = await requireAdmin(ctx);
     await ctx.db.patch(args.userId, { trustedLender: args.trusted });
+    await audit(
+      ctx,
+      admin._id,
+      "user.set_trusted",
+      args.userId,
+      args.trusted ? "trusted" : "untrusted",
+    );
+  },
+});
+
+/** Admin: most recent audit entries (IDs only; actor shown by user ID). */
+export const auditLog = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const n = Math.min(Math.max(args.limit ?? 50, 1), 200);
+    return ctx.db.query("auditLog").withIndex("by_at").order("desc").take(n);
   },
 });

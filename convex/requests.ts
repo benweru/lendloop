@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import { isOverdue, requireAdmin, requireCaller } from "./helpers";
 import { internal } from "./_generated/api";
 import { buildRequestEvent } from "./webhooks";
+import { audit, enforceRateLimit } from "./limits";
 
 /** Queue a signed request event for n8n (runs after commit, never blocks). */
 async function queueRequestEvent(ctx: MutationCtx, requestId: Id<"requests">) {
@@ -79,6 +80,7 @@ export const requestToBorrow = mutation({
     if (tool.ownerId === caller._id) throw new Error("Cannot borrow your own tool");
     if (!tool.available) throw new Error("Tool is not available");
     if (args.startDate > args.endDate) throw new Error("Invalid date range");
+    await enforceRateLimit(ctx, caller._id, "requestToBorrow");
     const requestId = await ctx.db.insert("requests", {
       toolId: args.toolId,
       borrowerId: caller._id,
@@ -86,6 +88,7 @@ export const requestToBorrow = mutation({
       endDate: args.endDate,
       status: "pending",
     });
+    await audit(ctx, caller._id, "request.create", requestId);
     await queueRequestEvent(ctx, requestId);
     return requestId;
   },
@@ -121,6 +124,7 @@ async function actOnRequest(
     if (req.status !== "pending") throw new Error("Request is not pending");
     await ctx.db.patch(req._id, { status: "cancelled" });
   }
+  await audit(ctx, caller._id, `request.${action}`, req._id);
   await queueRequestEvent(ctx, req._id);
   return req._id;
 }

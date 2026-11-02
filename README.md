@@ -135,7 +135,9 @@ sequenceDiagram
   (tool, borrower, start/end dates, status machine
   `pending → approved → returned`, plus `declined`/`cancelled`; `overdue` is
   *derived*, never client-set), `reminders` (request, reminder date, sent-at,
-  channel — also rendered as "automation activity" on each loan).
+  channel — also rendered as "automation activity" on each loan),
+  `rateLimits` (per user + action window counters), `auditLog` (actor,
+  action, target, time).
 - **Convex → n8n:** on request create/approve/decline/return/cancel the
   mutation schedules `internal.notify.sendRequestEvent`
   (`ctx.scheduler.runAfter(0, …)`), which runs after the mutation commits.
@@ -150,6 +152,12 @@ sequenceDiagram
 ## Security and data-minimization decisions
 
 Full threat model, data-flow table and residual risks: [SECURITY.md](SECURITY.md).
+
+- **Rate limiting:** per-user limits on listing creation (10/hour) and borrow
+  requests (20/hour), enforced inside Convex mutations (`convex/limits.ts`).
+- **Audit log:** admin and sensitive actions (listing create/delete, admin
+  removals, trusted-lender changes, every request transition) are recorded
+  with IDs only and shown to admins in the Admin panel.
 
 
 - **HMAC-SHA256 both directions** (`convex/webhooks.ts`, mirrored in n8n Code

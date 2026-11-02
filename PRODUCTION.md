@@ -13,8 +13,7 @@ Short note on what changes beyond this take-home setup.
 
 - Use separate Convex dev/staging/prod deployments; deploy via
   `CONVEX_DEPLOY_KEY` in CI, never from a laptop.
-- Add rate limiting on mutations (request creation, listing creation) to blunt
-  spam/abuse; add pagination + indexes review as data grows.
+- Add pagination + indexes review as data grows.
 - Back up via Convex snapshots/exports on a schedule; test restore.
 
 ## Secrets & webhooks
@@ -39,8 +38,19 @@ Short note on what changes beyond this take-home setup.
 
 - Host Next.js on Vercel (or equivalent) with preview deployments per PR;
   require `npm run build` + `npx vitest run` + lint in CI before merge.
-- Add observability: error tracking (e.g. Sentry), audit log for admin actions
-  (listing removals, trusted-lender grants), and analytics on loan outcomes.
+- Add observability: error tracking (e.g. Sentry) and analytics on loan
+  outcomes; ship audit-log entries to long-term storage.
+
+## Already implemented
+
+- **Rate limiting:** per-user fixed-window limits on listing creation
+  (10/hour) and borrow requests (20/hour), stored in Convex and enforced in
+  the mutation transaction (`convex/limits.ts`). In production, add IP-level
+  limits at the edge for unauthenticated traffic and tune limits from data.
+- **Audit log:** append-only `auditLog` table recording actor ID, action,
+  target ID and time for listing create/delete, admin removals,
+  trusted-lender changes and every request transition. Admin-only query and
+  view in the Admin panel. In production, add retention rules and export.
 
 ## Privacy
 

@@ -24,6 +24,7 @@ import {
   Trash2,
   Wrench,
   X,
+  ScrollText,
 } from "lucide-react";
 import { useState } from "react";
 import type { Id } from "../convex/_generated/dataModel";
@@ -620,7 +621,11 @@ function AdminPanel() {
   const users = useQuery(api.users.allUsers);
   const setTrusted = useMutation(api.users.setTrustedLender);
   const removeListing = useMutation(api.tools.adminRemoveListing);
+  const auditEntries = useQuery(api.users.auditLog, { limit: 30 });
   if (all === undefined) return null;
+  const userLabel = new Map(
+    (users ?? []).map((u: User) => [u._id as string, u.email ?? u.clerkId]),
+  );
   return (
     <section className="mt-8 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
       <SectionTitle hint="Visible only to admins.">Admin</SectionTitle>
@@ -666,6 +671,32 @@ function AdminPanel() {
           </Card>
         ))}
       </div>
+      <h3 className="mt-4 mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+        <ScrollText size={14} /> Audit log (latest {auditEntries?.length ?? 0})
+      </h3>
+      <Card className="divide-y divide-stone-100 p-0">
+        {(auditEntries ?? []).length === 0 && (
+          <p className="p-3 text-sm text-stone-500">No activity yet.</p>
+        )}
+        {(auditEntries ?? []).map((e) => (
+          <div
+            key={e._id}
+            className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+          >
+            <span className="min-w-0 truncate text-stone-800">
+              <Badge tone="violet">{e.action}</Badge>{" "}
+              <span className="text-stone-600">
+                by {userLabel.get(e.actorId) ?? e.actorId}
+              </span>{" "}
+              <span className="font-mono text-xs text-stone-400">{e.targetId}</span>
+              {e.detail && <span className="text-stone-500"> ({e.detail})</span>}
+            </span>
+            <time className="text-xs text-stone-500">
+              {new Date(e.at).toLocaleString()}
+            </time>
+          </div>
+        ))}
+      </Card>
     </section>
   );
 }

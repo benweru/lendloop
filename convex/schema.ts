@@ -63,4 +63,21 @@ export default defineSchema({
     sentAt: v.number(),
     channel: v.string(),
   }).index("by_request", ["requestId"]),
+
+  // Per-user fixed-window rate limit counters (see convex/limits.ts).
+  rateLimits: defineTable({
+    userId: v.id("users"),
+    action: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_user_action", ["userId", "action"]),
+
+  // Append-only audit trail of admin and sensitive actions. IDs only.
+  auditLog: defineTable({
+    actorId: v.id("users"),
+    action: v.string(),
+    targetId: v.string(),
+    detail: v.optional(v.string()),
+    at: v.number(),
+  }).index("by_at", ["at"]),
 });

@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin, requireCaller } from "./helpers";
 import { TOOL_CATEGORIES } from "./schema";
+import { audit, enforceRateLimit } from "./limits";
 
 const categoryValidator = v.union(
   ...TOOL_CATEGORIES.map((c) => v.literal(c)),
@@ -61,7 +62,8 @@ export const createTool = mutation({
   handler: async (ctx, args) => {
     const caller = await requireCaller(ctx);
     if (!args.name.trim()) throw new Error("Name is required");
-    return ctx.db.insert("tools", {
+    await enforceRateLimit(ctx, caller._id, "createTool");
+    const toolId = await ctx.db.insert("tools", {
       ownerId: caller._id,
       name: args.name.trim(),
       category: args.category,
@@ -69,6 +71,8 @@ export const createTool = mutation({
       description: args.description,
       available: true,
     });
+    await audit(ctx, caller._id, "tool.create", toolId);
+    return toolId;
   },
 });
 
@@ -101,6 +105,12 @@ export const deleteTool = mutation({
     if (tool.ownerId !== caller._id && caller.role !== "admin")
       throw new Error("Not your listing");
     await ctx.db.delete(args.toolId);
+    await audit(
+      ctx,
+      caller._id,
+      tool.ownerId === caller._id ? "tool.delete" : "tool.admin_remove",
+      args.toolId,
+    );
   },
 });
 
@@ -108,7 +118,9 @@ export const deleteTool = mutation({
 export const adminRemoveListing = mutation({
   args: { toolId: v.id("tools") },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const admin = await requireAdmin(ctx);
+    if (!(await ctx.db.get(args.toolId))) throw new Error("Tool not found");
     await ctx.db.delete(args.toolId);
+    await audit(ctx, admin._id, "tool.admin_remove", args.toolId);
   },
 });

@@ -24,6 +24,8 @@ with file references. Residual risks are listed honestly at the end.
 | Unauthenticated data access | All non-public queries call `requireCaller`; the public list returns name and category only | `convex/helpers.ts`, `listPublic` in `convex/tools.ts` |
 | Secret leakage | Secrets only in env vars (Convex env, container env); workflows read `$env.*`; `.env*` is git-ignored except the placeholder `.env.example`; docker-compose refuses to start without required secrets | `.gitignore`, `.env.example`, `docker-compose.yml`, `n8n/workflows/*.json` |
 | PII exposure to n8n | Request events carry IDs, tool name, dates and status only; the overdue list carries no emails; n8n looks up one borrower email at send time through a signed endpoint | `buildRequestEvent` in `convex/webhooks.ts`, `getOverdue` / `getBorrowerContact` in `convex/internal.ts` |
+| Spam / abuse (mass listings or requests) | Per-user fixed-window rate limits on listing and borrow-request creation, stored in Convex and enforced inside the mutation transaction | `convex/limits.ts` (`RATE_LIMITS`, `enforceRateLimit`), `createTool`, `requestToBorrow` |
+| Unaccountable admin or sensitive actions | Append-only `auditLog` table (actor ID, action, target ID, time; no emails or free text) for listing create/delete/admin removal, trusted-lender changes and every request transition; admin-only read | `audit` in `convex/limits.ts`, `auditLog` query in `convex/users.ts`, Admin panel in `app/home-client.tsx` |
 | Automation outage blocking users | Request events are scheduled after the mutation commits and retried with backoff; failures are logged and never fail the user action; n8n has retries and an error workflow | `convex/notify.ts`, `postSignedWithRetry` in `convex/webhooks.ts`, `n8n/workflows/error-workflow.json` |
 
 ## Data sent to n8n
@@ -49,7 +51,9 @@ with file references. Residual risks are listed honestly at the end.
 - Signed-in users see `ownerId` (an opaque ID) on listings.
 - The request-notification workflow sends to a placeholder address; real
   recipient lookup should reuse the signed contact endpoint.
-- No rate limiting or audit log in this version (see `PRODUCTION.md`).
+- Rate limits are per user only; there is no IP-level throttling for
+  unauthenticated traffic (that would sit at the edge in production).
+- The audit log covers writes, not reads.
 
 ## Applying this to a healthcare-style setting
 
@@ -61,8 +65,8 @@ The same patterns map to clinician/admin workflows with PHI:
 - Automation gets IDs, not PHI. n8n would fetch the minimum needed at send
   time through signed, narrowly scoped endpoints, and messages would avoid
   clinical detail ("You have a new message" rather than the content).
-- Add what this demo lacks before handling PHI: an audit log of every read
-  and write of patient data, nonce-based replay protection, per-direction
-  secrets with rotation, rate limiting, BAAs with vendors (Clerk, Convex,
+- Add what this demo lacks before handling PHI: extend the audit log to every
+  read of patient data, nonce-based replay protection, per-direction
+  secrets with rotation, edge rate limiting, BAAs with vendors (Clerk, Convex,
   email provider, n8n hosting), encryption and retention policies, and
   minimum-necessary access reviews.
