@@ -2,6 +2,19 @@ import { mutation, query, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { isOverdue, requireAdmin, requireCaller } from "./helpers";
+import { internal } from "./_generated/api";
+import { buildRequestEvent } from "./webhooks";
+
+/** Queue a signed request event for n8n (runs after commit, never blocks). */
+async function queueRequestEvent(ctx: MutationCtx, requestId: Id<"requests">) {
+  const req = await ctx.db.get(requestId);
+  if (!req) return;
+  const tool = await ctx.db.get(req.toolId);
+  if (!tool) return;
+  await ctx.scheduler.runAfter(0, internal.notify.sendRequestEvent, {
+    event: buildRequestEvent(req, tool),
+  });
+}
 
 const statusValidator = v.union(
   v.literal("pending"),
@@ -66,13 +79,15 @@ export const requestToBorrow = mutation({
     if (tool.ownerId === caller._id) throw new Error("Cannot borrow your own tool");
     if (!tool.available) throw new Error("Tool is not available");
     if (args.startDate > args.endDate) throw new Error("Invalid date range");
-    return ctx.db.insert("requests", {
+    const requestId = await ctx.db.insert("requests", {
       toolId: args.toolId,
       borrowerId: caller._id,
       startDate: args.startDate,
       endDate: args.endDate,
       status: "pending",
     });
+    await queueRequestEvent(ctx, requestId);
+    return requestId;
   },
 });
 
@@ -106,6 +121,7 @@ async function actOnRequest(
     if (req.status !== "pending") throw new Error("Request is not pending");
     await ctx.db.patch(req._id, { status: "cancelled" });
   }
+  await queueRequestEvent(ctx, req._id);
   return req._id;
 }
 

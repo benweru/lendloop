@@ -34,7 +34,11 @@ account"):
    (e.g. `https://xxx.clerk.accounts.dev`).
 3. Convex dashboard → your project → **Settings → Environment Variables** →
    add `CLERK_JWT_ISSUER_DOMAIN` with that URL. Also add `WEBHOOK_HMAC_SECRET`
-   (same value as the app's `.env`).
+   (same value as the app's `.env`), and `N8N_REQUEST_WEBHOOK_URL`
+   (the n8n production webhook URL, e.g.
+   `https://<your-n8n-host>/webhook/lendloop/request-event`). If it is unset,
+   request events are skipped and the app works normally. Convex must be able
+   to reach n8n, so for local n8n use a tunnel (e.g. `cloudflared` or `ngrok`).
 4. Restart `npx convex dev` so it picks up `convex/auth.config.ts`.
 
 ### 3. n8n (self-hosted)
@@ -94,8 +98,13 @@ n8n --signed ack--> Convex (/api/reminder-ack, idempotent write-back)
   `pending → approved → returned`, plus `declined`/`cancelled`; `overdue` is
   *derived*, never client-set), `reminders` (request, reminder date, sent-at,
   channel — also rendered as "automation activity" on each loan).
-- **Convex → n8n:** on request create/status change the app POSTs a minimal
-  payload (IDs, tool name, dates, status) to the n8n webhook.
+- **Convex → n8n:** on request create/approve/decline/return/cancel the
+  mutation schedules `internal.notify.sendRequestEvent`
+  (`ctx.scheduler.runAfter(0, …)`), which runs after the mutation commits.
+  It signs a minimal payload (`requestId, toolName, status, startDate,
+  endDate, borrowerId`) and POSTs it to `N8N_REQUEST_WEBHOOK_URL`, with 3
+  attempts and exponential backoff (500 ms, 1 s). n8n being down never blocks
+  or fails the user's action; failures are logged in Convex.
 - **n8n → Convex:** daily schedule fetches `/api/overdue`, resolves borrower
   contact per borrower at send time, sends via SMTP (or mock-logs), and writes
   back to `/api/reminder-ack` with an idempotency key (`requestId:reminderDate`).
@@ -121,7 +130,9 @@ n8n --signed ack--> Convex (/api/reminder-ack, idempotent write-back)
 
 ```bash
 npx vitest run   # HMAC sign/verify (valid, tampered, stale), idempotency keys,
-                 # overdue derivation, status-machine transition table
+                 # overdue derivation, status-machine transition table,
+                 # request-event payload + retry/backoff, and the exported n8n
+                 # "Verify HMAC" node run against the app's signed output
 npm run build    # production build + typecheck
 ```
 

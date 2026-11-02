@@ -11,6 +11,7 @@
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as internal_ from "../internal.js";
+import type * as notify from "../notify.js";
 import type * as requests from "../requests.js";
 import type * as tools from "../tools.js";
 import type * as users from "../users.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   helpers: typeof helpers;
   http: typeof http;
   internal: typeof internal_;
+  notify: typeof notify;
   requests: typeof requests;
   tools: typeof tools;
   users: typeof users;
