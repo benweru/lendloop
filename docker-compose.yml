@@ -1,0 +1,27 @@
+services:
+  n8n:
+    image: docker.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Secrets are injected from the shell / a local .env file (never committed).
+      # Required: N8N_ENCRYPTION_KEY, WEBHOOK_HMAC_SECRET.
+      # Optional SMTP for email notifications (mock-logged when unset):
+      # SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in your shell or .env}
+      - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET:?set WEBHOOK_HMAC_SECRET in your shell or .env}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-LendLoop <noreply@example.com>}
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

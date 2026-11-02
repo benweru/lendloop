@@ -1,0 +1,31 @@
+{
+  "name": "LendLoop — Error workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Surface failed runs visibly: log full context so nothing fails silently.\nconst err = $json;\nconsole.error('LENDLOOP WORKFLOW ERROR', JSON.stringify({\n  workflow: err.workflow?.name,\n  executionId: err.execution?.id,\n  node: err.execution?.lastNodeExecuted,\n  message: err.execution?.error?.message\n}));\nreturn [{ json: { logged: true, at: new Date().toISOString() } }];"
+      },
+      "id": "log-error",
+      "name": "Log error visibly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Error trigger": { "main": [[{ "node": "Log error visibly", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "timezone": "UTC" },
+  "staticData": null,
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0
+}
