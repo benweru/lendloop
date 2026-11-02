@@ -1,4 +1,4 @@
-export default {
+const authConfig = {
   providers: [
     {
       // Clerk issuer domain. Set CLERK_JWT_ISSUER_DOMAIN in the Convex
@@ -9,3 +9,5 @@ export default {
     },
   ],
 };
+
+export default authConfig;
