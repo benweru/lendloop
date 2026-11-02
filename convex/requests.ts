@@ -1,5 +1,6 @@
 import { mutation, query, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { isOverdue, requireAdmin, requireCaller } from "./helpers";
 
 const statusValidator = v.union(
@@ -77,11 +78,11 @@ export const requestToBorrow = mutation({
 
 async function actOnRequest(
   ctx: MutationCtx,
-  requestId: string,
+  requestId: Id<"requests">,
   action: "approve" | "decline" | "return" | "cancel",
 ) {
   const caller = await requireCaller(ctx);
-  const req = await ctx.db.get(requestId as never);
+  const req = await ctx.db.get(requestId);
   if (!req) throw new Error("Request not found");
   const tool = await ctx.db.get(req.toolId);
   if (!tool) throw new Error("Tool not found");

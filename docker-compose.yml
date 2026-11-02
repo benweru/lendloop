@@ -11,6 +11,7 @@ services:
       # SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in your shell or .env}
       - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET:?set WEBHOOK_HMAC_SECRET in your shell or .env}
+      - CONVEX_HTTP_URL=${CONVEX_HTTP_URL:-}
       - N8N_HOST=${N8N_HOST:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=${N8N_PROTOCOL:-http}

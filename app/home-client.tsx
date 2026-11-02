@@ -1,7 +1,9 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useMutation, useQuery } from "convex/react";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { useState } from "react";
+import type { Id } from "../convex/_generated/dataModel";
 import { api } from "../convex/_generated/api";
 import { Badge, Button, Card, Input, Select } from "../components/ui";
 
@@ -13,19 +15,20 @@ const CATEGORIES = [
   "cleaning",
   "automotive",
   "other",
-];
+] as const;
+type Category = (typeof CATEGORIES)[number];
 
-type PublicTool = { _id: string; name: string; category: string };
+type PublicTool = { _id: Id<"tools">; name: string; category: string };
 type Tool = PublicTool & {
-  ownerId: string;
+  ownerId: Id<"users">;
   condition: string;
   description: string;
   available: boolean;
   ownerTrusted: boolean;
 };
 type Loan = {
-  _id: string;
-  toolId: string;
+  _id: Id<"requests">;
+  toolId: Id<"tools">;
   startDate: string;
   endDate: string;
   status: string;
@@ -33,7 +36,7 @@ type Loan = {
 };
 type Reminder = { reminderDate: string };
 type User = {
-  _id: string;
+  _id: Id<"users">;
   clerkId: string;
   email?: string;
   trustedLender: boolean;
@@ -51,14 +54,14 @@ function Header({ isAdmin }: { isAdmin: boolean }) {
         </div>
         <div className="flex items-center gap-3">
           {isAdmin && <Badge>Admin</Badge>}
-          <SignedIn>
+          <Show when="signed-in">
             <UserButton />
-          </SignedIn>
-          <SignedOut>
+          </Show>
+          <Show when="signed-out">
             <SignInButton mode="modal">
               <Button>Sign in to lend or borrow</Button>
             </SignInButton>
-          </SignedOut>
+          </Show>
         </div>
       </div>
     </header>
@@ -86,7 +89,7 @@ function PublicList() {
 function ListToolForm({ onDone }: { onDone: () => void }) {
   const createTool = useMutation(api.tools.createTool);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState<Category>(CATEGORIES[0]);
   const [condition, setCondition] = useState("");
   const [description, setDescription] = useState("");
   return (
@@ -104,7 +107,10 @@ function ListToolForm({ onDone }: { onDone: () => void }) {
         onChange={(e) => setName(e.target.value)}
         required
       />
-      <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+      <Select
+        value={category}
+        onChange={(e) => setCategory(e.target.value as Category)}
+      >
         {CATEGORIES.map((c) => (
           <option key={c} value={c}>
             {c}
@@ -244,7 +250,7 @@ function Dashboard() {
         </div>
         {showForm && <ListToolForm onDone={() => setShowForm(false)} />}
         <div className="mt-2 grid gap-2">
-          {(listings ?? []).map((t: Tool) => (
+          {(listings ?? []).map((t) => (
             <Card key={t._id} className="flex items-center justify-between">
               <span>
                 {t.name} <Badge>{t.available ? "Available" : "On loan"}</Badge>
@@ -394,7 +400,7 @@ export default function HomeClient() {
     <div className="flex min-h-full flex-col">
       <Header isAdmin={false} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <SignedOut>
+        <Show when="signed-out">
           <h2 className="mb-3 text-lg font-semibold">Available tools</h2>
           {authed ? (
             <PublicList />
@@ -403,10 +409,10 @@ export default function HomeClient() {
               Connect Convex (NEXT_PUBLIC_CONVEX_URL) to see live tools.
             </p>
           )}
-        </SignedOut>
-        <SignedIn>
+        </Show>
+        <Show when="signed-in">
           <AuthedApp />
-        </SignedIn>
+        </Show>
         {!authed && (
           <p className="mt-4 text-sm text-zinc-500">
             Connect Clerk + Convex (see .env.example) to enable sign-in.
@@ -416,6 +422,7 @@ export default function HomeClient() {
     </div>
   );
 }
+
 
 
 

@@ -1,24 +1,61 @@
-// NOTE: This is a placeholder checked in so the repo typechecks standalone.
-// Run `npx convex dev` (after Clerk/Convex setup) to regenerate the real file.
-import type { ApiFromModules } from "convex/server";
-import type * as helpers from "../helpers";
-import type * as http from "../http";
-import type * as internal from "../internal";
-import type * as requests from "../requests";
-import type * as tools from "../tools";
-import type * as users from "../users";
-import type * as webhooks from "../webhooks";
+/* eslint-disable */
+/**
+ * Generated `api` utility.
+ *
+ * THIS CODE IS AUTOMATICALLY GENERATED.
+ *
+ * To regenerate, run `npx convex dev`.
+ * @module
+ */
+
+import type * as helpers from "../helpers.js";
+import type * as http from "../http.js";
+import type * as internal_ from "../internal.js";
+import type * as requests from "../requests.js";
+import type * as tools from "../tools.js";
+import type * as users from "../users.js";
+import type * as webhooks from "../webhooks.js";
+
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
 
 declare const fullApi: ApiFromModules<{
   helpers: typeof helpers;
   http: typeof http;
-  internal: typeof internal;
+  internal: typeof internal_;
   requests: typeof requests;
   tools: typeof tools;
   users: typeof users;
   webhooks: typeof webhooks;
 }>;
-export declare const api: typeof fullApi;
-export declare const internal: typeof fullApi;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DataModel = any;
+
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
+export declare const api: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "public">
+>;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
+export declare const internal: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "internal">
+>;
+
+export declare const components: {};
