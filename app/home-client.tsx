@@ -380,12 +380,19 @@ function AdminPanel() {
 function AuthedApp() {
   const ensureUser = useMutation(api.users.ensureUser);
   const me = useQuery(api.users.me);
-  const [ready, setReady] = useState(false);
-  if (me === undefined) return <p>Loading…</p>;
-  if (me === null && !ready) {
-    ensureUser({}).then(() => setReady(true));
-    return <p>Setting up your account…</p>;
+  const [error, setError] = useState<string | null>(null);
+  if (me === undefined && !error) return <p>Loading…</p>;
+  if ((me === null || me === undefined) && !error) {
+    ensureUser({}).catch((e) => setError(String(e?.message ?? e)));
+    if (!error) return <p>Setting up your account…</p>;
   }
+  if (error)
+    return (
+      <p className="text-sm text-red-600">
+        Couldn&apos;t set up your account: {error}. Check that
+        CLERK_JWT_ISSUER_DOMAIN is set in the Convex dashboard env settings.
+      </p>
+    );
   return (
     <>
       <Dashboard />
